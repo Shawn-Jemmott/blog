@@ -1,0 +1,86 @@
+version: "3"
+
+volumes:
+  postgres_data: {}
+
+services:
+  postgres_db:
+    image: postgres:12
+    restart: always
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+    volumes:
+    - postgres_data:/var/lib/postgresql/data
+    ports:
+      - ${POSTGRES_PORT}:${POSTGRES_PORT}
+    command: -p ${POSTGRES_PORT}
+    networks:
+      app_network:
+
+  django_backend:
+    build:
+      context: .
+      dockerfile: compose/django/Dockerfile
+    depends_on:
+      - postgres_db
+    volumes:
+      - ./backend:/src:delegated
+    ports:
+      - ${DJANGO_PORT}:${DJANGO_PORT}
+    expose:
+      - ${DJANGO_PORT}
+    environment:
+      - SECRET_KEY=${SECRET_KEY}
+      - ENV=${ENV}
+      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
+      - PYTHONPATH=${PYTHONPATH}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - DJANGO_PORT=${DJANGO_PORT}
+    networks:
+      app_network:
+
+  angular_frontend:
+      build:
+        context: .
+        dockerfile: compose/angular/Dockerfile
+      depends_on:
+        - django_backend
+      volumes:
+        - ./frontend:/frontend:delegated
+        - /frontend/node_modules
+      expose:
+        - ${ANGULAR_PORT}
+      environment:
+        - ANGULAR_PORT=${ANGULAR_PORT}
+      networks:
+        app_network:
+  
+  nginx:
+    build:
+      context: .
+      dockerfile: compose/nginx/Dockerfile
+    ports:
+      - ${ANGULAR_PORT}:${NGINX_PORT}
+    volumes:
+      - ./frontend:/src
+    depends_on:
+      - django_backend
+      - angular_frontend
+    environment:
+      - ANGULAR_PORT=${ANGULAR_PORT}
+    networks:
+      app_network:
+
+
+networks:
+  app_network:
+    external:
+      name: app_network

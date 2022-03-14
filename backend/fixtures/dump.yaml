@@ -1,0 +1,14 @@
+- model: posts.post
+  pk: 1
+  fields:
+    title: John
+    body: Lennon
+    created_at: 2022-03-10T15:09:21.808704Z
+    updated_at: 2022-03-10T15:09:21.808704Z
+- model: posts.post
+  pk: 2
+  fields:
+    title: Paul
+    body: McCartney
+    created_at: 2022-03-10T15:09:21.808704Z
+    updated_at: 2022-03-10T15:09:21.808704Z
